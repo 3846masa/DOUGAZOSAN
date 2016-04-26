@@ -31,17 +31,12 @@
       $('#searchImg').empty();
       $.ajax({
         //url:'http://133.26.46.237/index.cgi',
-        url: 'https://script.google.com/macros/s/AKfycbzELgeOdSilIPAR_6x_haNvuLlBnsl5hrhE4i-CU-BCCLWz_TI/exec',
-        type:'post',
-        dataType:'json',
-        contentType:'text/plain',
-        data:JSON.stringify({
-          url: "http://www.google.co.jp/search?tbm=isch&tbs=sur:f&q="+encodeURIComponent(str)
-        }),
+        url: 'https://crossorigin.me/' + "https://www.google.co.jp/search?tbm=isch&tbs=sur:f&q=" + encodeURIComponent(str),
+        type:'get',
+        dataType:'text',
         success:function(data){
-          console.log(data.body);
-          if (data.body) {
-            data.body.match(/<a[^>]*?href=["']([^>]*?)["'][^>]*?>[^<]*?<img[^>]*?src=["'][^>]*?["'][^>]*?>/g).forEach(function(tag){
+          if (data) {
+            data.match(/<a[^>]*?href=["']([^>]*?)["'][^>]*?>[^<]*?<img[^>]*?src=["'][^>]*?["'][^>]*?>/g).forEach(function(tag){
               var info = tag.match(/<a[^>]*?href=["']([^>]*?)["'][^>]*?>[^<]*?<img[^>]*?src=["']([^>]*?)["'][^>]*?>/);
               //var imghref = decodeURIComponent(info[1].unescapeHTML().match(/imgurl=(.*?)&/)[1]);
               var imgsrc = info[2];
@@ -64,19 +59,15 @@
       $('#searchImg').empty();
       $.ajax({
         //url:'http://133.26.46.237/index.cgi',
-        url: 'https://script.google.com/macros/s/AKfycbzELgeOdSilIPAR_6x_haNvuLlBnsl5hrhE4i-CU-BCCLWz_TI/exec',
-        type:'post',
-        dataType:'json',
-        contentType:'text/plain',
-        data:JSON.stringify({
-          url: "https://www.youtube.com/results?" + /*"filters=creativecommons&" +*/ "search_query="+encodeURIComponent(str)
-        }),
+        url: 'https://crossorigin.me/' +
+             "https://www.youtube.com/results?" +
+             "search_query=" + encodeURIComponent(str),
+        type:'get',
+        dataType:'text',
         success:function(data){
-          console.log(data.body);
-          if (data.body) {
-            // data.body.match(/<div[^>]*?class=['"]yt-lockup-thumbnail['"][^>]*?>[\s\S]*?<a[^>]*?href=["'](.*?)["'][\s\S]*?<img[^>]*?src=["'](.*?)["'][\s\S]*?<h3[^>]*?class=["']yt-lockup-title["'][\s\S]*?title=["'](.*?)["']/g).forEach(function(tag){
-              // var info = tag.match(/<div[^>]*?class=['"]yt-lockup-thumbnail['"][^>]*?>[\s\S]*?<a[^>]*?href=["'](.*?)["'][\s\S]*?<img[^>]*?src=["'](.*?)["'](?:[^>]*?data-thumb=["'](.*?)["'])?[\s\S]*?<h3[^>]*?class=["']yt-lockup-title["'][\s\S]*?title=["'](.*?)["']/);
-            data.body.match(/<img[^>]*?data-thumb=["']([^"']*?)["'][\s\S]*?<div[^>]*?class=['"]yt-lockup-content['"][^>]*?>[\s\S]*?<a[^>]*?href=["'](.*?)["'][\s\S]*?title=["']([^"']*?)["']/g).forEach(function(tag) {
+          console.log(data);
+          if (data) {
+            data.match(/<img[^>]*?data-thumb=["']([^"']*?)["'][\s\S]*?<div[^>]*?class=['"]yt-lockup-content['"][^>]*?>[\s\S]*?<a[^>]*?href=["'](.*?)["'][\s\S]*?title=["']([^"']*?)["']/g).forEach(function(tag) {
               var info = tag.match(/<img[^>]*?data-thumb=["']([^"']*?)["'][\s\S]*?<div[^>]*?class=['"]yt-lockup-content['"][^>]*?>[\s\S]*?<a[^>]*?href=["'](.*?)["'][\s\S]*?title=["']([^"']*?)["']/);
               console.log(info);
               if (!info || info.length !=4 || !info[2].match(/v=/)) return;
@@ -101,25 +92,21 @@
     function pasteURLDetail(addr){
       $.ajax({
         //url:'http://133.26.46.237/index.cgi',
-        url: 'https://script.google.com/macros/s/AKfycbzELgeOdSilIPAR_6x_haNvuLlBnsl5hrhE4i-CU-BCCLWz_TI/exec',
-        type:'post',
-        dataType:'json',
-        contentType:'text/plain',
-        data:JSON.stringify({
-          url: addr
-        }),
+        url: 'https://crossorigin.me/' + addr,
+        type:'get',
+        dataType:'text',
         success:function(data){
-          if (data.body && data.redirect) {
-            var doc = new DOMParser().parseFromString(data.body, 'text/html');
-            var html = $(doc); //$('<div>').html(data.body);
+          if (data) {
+            var doc = new DOMParser().parseFromString(data, 'text/html');
+            var html = $(doc);
             var title = html.find('title').text().replace(/\n/g,'');
             var description = html.find('meta[name*="description"],meta[property*="description"]');
             description = (description.length > 0 ? description[0].getAttribute('content').replace(/\n/g,'') : '');
             if (addr.match(/^https?:\/\/[^\/]*?wikipedia\.org/)) {
-              description = wikipediaDetail(data.body);
+              description = wikipediaDetail(data);
             }
             console.log(description);
-            var md = '> **['+title+']('+ data.redirect +')**\n'+description+'\n\n';
+            var md = '> **['+title+']('+ addr +')**\n'+description+'\n\n';
             insertDetail(md);
             changeMarkdown();
           }
@@ -141,17 +128,12 @@
     function pasteURLTitle(addr){
       $.ajax({
         //url:'http://133.26.46.237/index.cgi',
-        url: 'https://script.google.com/macros/s/AKfycbzELgeOdSilIPAR_6x_haNvuLlBnsl5hrhE4i-CU-BCCLWz_TI/exec',
-        type:'post',
-        dataType:'json',
-        contentType:'text/plain',
-        data:JSON.stringify({
-          url: addr
-        }),
+        url: 'https://crossorigin.me/' + addr,
+        type:'get',
+        dataType:'text',
         success:function(data){
-          if (data.body) {
-            // var html = $('<div>').html(data.body);
-            var doc = new DOMParser().parseFromString(data.body, 'text/html');
+          if (data) {
+            var doc = new DOMParser().parseFromString(data, 'text/html');
             var html = $(doc);
             var title = html.find('title').text().replace(/\n/g,'');
             var md = '['+ title +']('+ addr +')';
@@ -224,11 +206,11 @@
         } else if (text.substring(0,cursorPos).match(/>\[[^\]]*?\]$/)) {
           var pasteURL = text.substring(0,cursorPos).match(/\[([^\]]*?)\]$/)[1];
           if (pasteURL.match(/^wiki(?:pedia)?:/i)) {
-            var searchURL = 'http://ja.wikipedia.org/w/index.php?search='
+            var searchURL = 'https://ja.wikipedia.org/w/index.php?search='
             searchURL += pasteURL.match(/^wiki(?:pedia)?:(.*)$/i)[1];
             pasteURLDetail(searchURL);
           } else if (pasteURL.match(/^g(?:oogle)?:/i)) {
-            var searchURL = 'http://www.google.co.jp/search?btnI=1&q=';
+            var searchURL = 'https://www.google.co.jp/search?btnI=1&q=';
             searchURL += pasteURL.match(/^g(?:oogle)?:(.*)$/i)[1];
             pasteURLDetail(searchURL);
           } else {
