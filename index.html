@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'/>
+  <title>markdown</title>
+  <script src="./js/marked.js"></script>
+  <script src='./js/jquery-2.1.1.min.js'></script>
+  <script src='./js/jszip.min.js'></script>
+  <script src='./js/FileSaver.js'></script>
+  <link rel="stylesheet" href="./css/github-markdown.css">
+
+  <script>
+    marked.setOptions({
+      gfm: true,
+      tables: true,
+      breaks: true,
+      sanitize: false
+    });
+
+    String.prototype.unescapeHTML = function() {
+      var div = document.createElement("div");
+      div.innerHTML = this.replace(/</g,"&lt;")
+                         .replace(/>/g,"&gt;")
+                         .replace(/ /g, "&nbsp;")
+                         .replace(/\r/g, "&#13;")
+                         .replace(/\n/g, "&#10;");
+      return div.textContent || div.innerText;
+    };
+
+    function searchImage(str){
+      $('#searchImg').empty();
+      $.ajax({
+        //url:'http://133.26.46.237/index.cgi',
+        url: 'https://script.google.com/macros/s/AKfycbzELgeOdSilIPAR_6x_haNvuLlBnsl5hrhE4i-CU-BCCLWz_TI/exec',
+        type:'post',
+        dataType:'json',
+        contentType:'text/plain',
+        data:JSON.stringify({
+          url: "http://www.google.co.jp/search?tbm=isch&tbs=sur:f&q="+encodeURIComponent(str)
+        }),
+        success:function(data){
+          console.log(data.body);
+          if (data.body) {
+            data.body.match(/<a[^>]*?href=["']([^>]*?)["'][^>]*?>[^<]*?<img[^>]*?src=["'][^>]*?["'][^>]*?>/g).forEach(function(tag){
+              var info = tag.match(/<a[^>]*?href=["']([^>]*?)["'][^>]*?>[^<]*?<img[^>]*?src=["']([^>]*?)["'][^>]*?>/);
+              //var imghref = decodeURIComponent(info[1].unescapeHTML().match(/imgurl=(.*?)&/)[1]);
+              var imgsrc = info[2];
+              //console.log(imghref);
+              console.log(info);
+              //console.log(imgsrc);
+              $('<img>').attr({'src':imgsrc,'origin':imgsrc/*imghref*/})
+                        .click(function(){
+                          insertStr('('+$(this).attr('origin')+')');
+                          changeMarkdown();
+                        })
+                        .appendTo('#searchImg');
+            });
+          }
+        }
+      });
+    };
+
+    function searchVideo(str){
+      $('#searchImg').empty();
+      $.ajax({
+        //url:'http://133.26.46.237/index.cgi',
+        url: 'https://script.google.com/macros/s/AKfycbzELgeOdSilIPAR_6x_haNvuLlBnsl5hrhE4i-CU-BCCLWz_TI/exec',
+        type:'post',
+        dataType:'json',
+        contentType:'text/plain',
+        data:JSON.stringify({
+          url: "https://www.youtube.com/results?" + /*"filters=creativecommons&" +*/ "search_query="+encodeURIComponent(str)
+        }),
+        success:function(data){
+          console.log(data.body);
+          if (data.body) {
+            // data.body.match(/<div[^>]*?class=['"]yt-lockup-thumbnail['"][^>]*?>[\s\S]*?<a[^>]*?href=["'](.*?)["'][\s\S]*?<img[^>]*?src=["'](.*?)["'][\s\S]*?<h3[^>]*?class=["']yt-lockup-title["'][\s\S]*?title=["'](.*?)["']/g).forEach(function(tag){
+              // var info = tag.match(/<div[^>]*?class=['"]yt-lockup-thumbnail['"][^>]*?>[\s\S]*?<a[^>]*?href=["'](.*?)["'][\s\S]*?<img[^>]*?src=["'](.*?)["'](?:[^>]*?data-thumb=["'](.*?)["'])?[\s\S]*?<h3[^>]*?class=["']yt-lockup-title["'][\s\S]*?title=["'](.*?)["']/);
+            data.body.match(/<img[^>]*?data-thumb=["']([^"']*?)["'][\s\S]*?<div[^>]*?class=['"]yt-lockup-content['"][^>]*?>[\s\S]*?<a[^>]*?href=["'](.*?)["'][\s\S]*?title=["']([^"']*?)["']/g).forEach(function(tag) {
+              var info = tag.match(/<img[^>]*?data-thumb=["']([^"']*?)["'][\s\S]*?<div[^>]*?class=['"]yt-lockup-content['"][^>]*?>[\s\S]*?<a[^>]*?href=["'](.*?)["'][\s\S]*?title=["']([^"']*?)["']/);
+              console.log(info);
+              if (!info || info.length !=4 || !info[2].match(/v=/)) return;
+              var tmp = info[1]; info[1] = info[2]; info[2] = info[3]; info[3] = tmp;
+              var videosrc = 'http://www.youtube-nocookie.com/embed/' + info[1].match(/v=(.*)$/)[1];
+              var imgsrc = info[3].replace(/^\/\//,'http:\/\/');
+              var title = info[2];
+              $('<img>').attr({'src':imgsrc,'origin':videosrc/*imghref*/, 'title':title})
+                        .click(function(){
+                          var iframeTag = '<iframe src="'+ $(this).attr('origin') +'" frameborder="0" allowfullscreen></iframe>';
+                          iframeTag += '<!-- '+ $(this).attr('title') +' -->\n';
+                          insertVideo(iframeTag);
+                          changeMarkdown();
+                        })
+                        .appendTo('#searchImg');
+            });
+          }
+        }
+      });
+    };
+
+    function pasteURLDetail(addr){
+      $.ajax({
+        //url:'http://133.26.46.237/index.cgi',
+        url: 'https://script.google.com/macros/s/AKfycbzELgeOdSilIPAR_6x_haNvuLlBnsl5hrhE4i-CU-BCCLWz_TI/exec',
+        type:'post',
+        dataType:'json',
+        contentType:'text/plain',
+        data:JSON.stringify({
+          url: addr
+        }),
+        success:function(data){
+          if (data.body && data.redirect) {
+            var doc = new DOMParser().parseFromString(data.body, 'text/html');
+            var html = $(doc); //$('<div>').html(data.body);
+            var title = html.find('title').text().replace(/\n/g,'');
+            var description = html.find('meta[name*="description"],meta[property*="description"]');
+            description = (description.length > 0 ? description[0].getAttribute('content').replace(/\n/g,'') : '');
+            if (addr.match(/^https?:\/\/[^\/]*?wikipedia\.org/)) {
+              description = wikipediaDetail(data.body);
+            }
+            console.log(description);
+            var md = '> **['+title+']('+ data.redirect +')**\n'+description+'\n\n';
+            insertDetail(md);
+            changeMarkdown();
+          }
+        }
+      });
+    };
+
+    function wikipediaDetail(data) {
+      // var html = $('<div>').html(data);
+      var doc = new DOMParser().parseFromString(data, 'text/html');
+      var html = $(doc);
+      var content = '';
+      html.find('#mw-content-text>p').each(function(){
+        content += this.textContent;
+      });
+      return (content.length>0)?content.replace(/\n/g,'').substring(0,100)+'...':'';
+    };
+
+    function pasteURLTitle(addr){
+      $.ajax({
+        //url:'http://133.26.46.237/index.cgi',
+        url: 'https://script.google.com/macros/s/AKfycbzELgeOdSilIPAR_6x_haNvuLlBnsl5hrhE4i-CU-BCCLWz_TI/exec',
+        type:'post',
+        dataType:'json',
+        contentType:'text/plain',
+        data:JSON.stringify({
+          url: addr
+        }),
+        success:function(data){
+          if (data.body) {
+            // var html = $('<div>').html(data.body);
+            var doc = new DOMParser().parseFromString(data.body, 'text/html');
+            var html = $(doc);
+            var title = html.find('title').text().replace(/\n/g,'');
+            var md = '['+ title +']('+ addr +')';
+            insertLink(md);
+            changeMarkdown();
+          }
+        }
+      });
+    };
+
+    function insertStr(str) {
+      var textarea = document.querySelector('textarea');
+      var text = textarea.value;
+      var cursorPos = textarea.selectionStart;
+      text = text.substring(0,cursorPos) + str + text.slice(cursorPos);
+      textarea.value = text;
+      textarea.selectionStart = cursorPos + str.length;
+      textarea.selectionEnd = textarea.selectionStart;
+    };
+
+    function insertVideo(str) {
+      var textarea = document.querySelector('textarea');
+      var text = textarea.value;
+      var cursorPos = textarea.selectionStart;
+      text = text.substring(0,cursorPos).match(/([\s\S]*)!\[.*?\]/)[1] + str + text.slice(cursorPos);
+      textarea.value = text;
+      textarea.selectionStart = cursorPos + str.length;
+      textarea.selectionEnd = textarea.selectionStart;
+    };
+
+    function insertDetail(str) {
+      var textarea = document.querySelector('textarea');
+      var text = textarea.value;
+      var cursorPos = textarea.selectionStart;
+      text = text.substring(0,cursorPos).match(/([\s\S]*)>\[.*?\]/)[1] + str + text.slice(cursorPos);
+      textarea.value = text;
+      textarea.selectionStart = cursorPos + str.length;
+      textarea.selectionEnd = textarea.selectionStart;
+    };
+
+    function insertLink(str) {
+      var textarea = document.querySelector('textarea');
+      var text = textarea.value;
+      var cursorPos = textarea.selectionStart;
+      text = text.substring(0,cursorPos).match(/([\s\S]*)\[.*?\]/)[1] + str + text.slice(cursorPos);
+      textarea.value = text;
+      textarea.selectionStart = cursorPos + str.length;
+      textarea.selectionEnd = textarea.selectionStart;
+    };
+
+    function changeMarkdown(){
+      var textarea = document.querySelector('textarea');
+      // encode to HTML
+      document.querySelector('article').innerHTML = marked(textarea.value);
+      // save to localStorage
+      localStorage['markdown'] = textarea.value;
+      // searchImage
+      var text = textarea.value;
+      var cursorPos = textarea.selectionStart;
+      if (!text.slice(cursorPos).match(/^\w/)) {
+        if (text.substring(0,cursorPos).match(/!\[[^\]]*?\]$/)) {
+          textarea.style.height = '80%';
+          document.querySelector('#searchImg').style.display = 'block';
+          var searchStr = text.substring(0,cursorPos).match(/!\[([^\]]*?)\]$/)[1];
+          if (searchStr.match(/^video:/)) {
+            searchVideo(searchStr.match(/^video:(.*)$/)[1]);
+          } else {
+            searchImage(searchStr);
+          }
+        } else if (text.substring(0,cursorPos).match(/>\[[^\]]*?\]$/)) {
+          var pasteURL = text.substring(0,cursorPos).match(/\[([^\]]*?)\]$/)[1];
+          if (pasteURL.match(/^wiki(?:pedia)?:/i)) {
+            var searchURL = 'http://ja.wikipedia.org/w/index.php?search='
+            searchURL += pasteURL.match(/^wiki(?:pedia)?:(.*)$/i)[1];
+            pasteURLDetail(searchURL);
+          } else if (pasteURL.match(/^g(?:oogle)?:/i)) {
+            var searchURL = 'http://www.google.co.jp/search?btnI=1&q=';
+            searchURL += pasteURL.match(/^g(?:oogle)?:(.*)$/i)[1];
+            pasteURLDetail(searchURL);
+          } else {
+            pasteURLDetail(pasteURL);
+          }
+        } else if (text.substring(0,cursorPos).match(/\[[^\]]*?\]$/)) {
+          var pasteURL = text.substring(0,cursorPos).match(/\[([^\]]*?)\]$/)[1];
+          pasteURLTitle(pasteURL);
+        } else {
+          textarea.style.height = '100%';
+          document.querySelector('#searchImg').style.display = 'none';
+        }
+      } else {
+        textarea.style.height = '100%';
+        document.querySelector('#searchImg').style.display = 'none';
+      }
+    }
+
+    window.addEventListener('load',function(){
+      var textarea = document.querySelector('textarea');
+      textarea.addEventListener('input', function(){
+        changeMarkdown();
+      });
+      textarea.addEventListener('keydown',function (event){
+        if (event.keyCode == 9 /*tab*/) {
+          var text = this.value;
+          var indent = "  ";
+          var cursorPos = this.selectionStart;
+          text = text.substring(0,cursorPos) + indent + text.slice(cursorPos);
+          this.value = text;
+          this.selectionStart = cursorPos + indent.length;
+          this.selectionEnd = this.selectionStart;
+          event.preventDefault();
+        }
+      });
+      if (localStorage['markdown']) {
+        textarea.value = localStorage['markdown'];
+        changeMarkdown();
+      }
+      textarea.focus();
+
+      document.querySelector('#htmlDL').addEventListener('click',function(){
+        var textarea = document.querySelector('textarea');
+        var zip = new JSZip();
+        zip.file("index.html","<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset=\'utf-8\'/>\n    <title>markdown</title>\n    <link rel=\"stylesheet\" href=\"./css/github-markdown.css\">\n  </head>\n  <body>\n    <article class=\'markdown-body\'>\n"+marked(textarea.value)+"\n    </article>\n  </body>\n</html>");
+        $.get("./css/github-markdown.css", function(data){
+          var foldercss = zip.folder("css");
+          foldercss.file("github-markdown.css", data);
+          var zipblob = zip.generate({type:"blob"});
+          saveAs(zipblob, "markdown.zip");
+        });
+      });
+
+      document.querySelector('#mdDL').addEventListener('click',function(){
+        var blob = new Blob([document.querySelector('textarea').value], {"type":"text/plain"});
+        saveAs(blob, "markdown.md");
+      });
+    });
+  </script>
+  <style>
+    textarea,article,div {
+      position: fixed;
+      width: 50%;
+      box-sizing: border-box;
+      font-size: 125%;
+      overflow-x: hidden;
+      overflow-y: scroll !important;
+    }
+    textarea {
+      top: 0px;
+      left: 0px;
+      height: 100%;
+      resize: none;
+      word-break: break-all;
+      font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
+    }
+    #searchImg {
+      height: 20%;
+      bottom: 0px;
+      left: 0px;
+      display: none;
+      z-index: 100;
+    }
+    #searchImg img {
+      max-width: 100px;
+      max-height: 100px;
+    }
+    article {
+      top: 0px;
+      right: 0px;
+      height: 100%;
+      padding: 10px 15px;
+    }
+    article img {
+      max-width: 100%;
+    }
+    .button {
+      position:fixed;
+      height:48px;
+      width:48px;
+      overflow: hidden !important;
+      background-color:#222222;
+      opacity: .7;
+      z-index:100;
+    }
+    #mdDL {
+      right: 4px;
+      bottom: 4px;
+    }
+    #htmlDL {
+      right:56px;
+      bottom:4px;
+    }
+  </style>
+</head>
+<body>
+  <textarea></textarea>
+  <div id='searchImg'></div>
+  <article class='markdown-body'></article>
+
+  <img class='button' id='mdDL' src="./svg/md.svg">
+  <img class='button' id='htmlDL' src="./svg/html.svg">
+</body>
+</html>
