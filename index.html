@@ -72,8 +72,8 @@
               console.log(info);
               if (!info || info.length !=4 || !info[2].match(/v=/)) return;
               var tmp = info[1]; info[1] = info[2]; info[2] = info[3]; info[3] = tmp;
-              var videosrc = 'http://www.youtube-nocookie.com/embed/' + info[1].match(/v=(.*)$/)[1];
-              var imgsrc = info[3].replace(/^\/\//,'http:\/\/');
+              var videosrc = '//www.youtube-nocookie.com/embed/' + info[1].match(/v=(.*)$/)[1];
+              var imgsrc = info[3];
               var title = info[2];
               $('<img>').attr({'src':imgsrc,'origin':videosrc/*imghref*/, 'title':title})
                         .click(function(){
