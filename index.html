@@ -31,7 +31,7 @@
       $('#searchImg').empty();
       $.ajax({
         //url:'http://133.26.46.237/index.cgi',
-        url: 'https://crossorigin.me/' + "https://www.google.co.jp/search?tbm=isch&tbs=sur:f&q=" + encodeURIComponent(str),
+        url: 'https://cors-anywhere.herokuapp.com/' + "https://www.google.co.jp/search?tbm=isch&tbs=sur:f&q=" + encodeURIComponent(str),
         type:'get',
         dataType:'text',
         success:function(data){
@@ -59,7 +59,7 @@
       $('#searchImg').empty();
       $.ajax({
         //url:'http://133.26.46.237/index.cgi',
-        url: 'https://crossorigin.me/' +
+        url: 'https://cors-anywhere.herokuapp.com/' +
              "https://www.youtube.com/results?" +
              "search_query=" + encodeURIComponent(str),
         type:'get',
@@ -92,7 +92,7 @@
     function pasteURLDetail(addr){
       $.ajax({
         //url:'http://133.26.46.237/index.cgi',
-        url: 'https://crossorigin.me/' + addr,
+        url: 'https://cors-anywhere.herokuapp.com/' + addr,
         type:'get',
         dataType:'text',
         success:function(data){
@@ -128,7 +128,7 @@
     function pasteURLTitle(addr){
       $.ajax({
         //url:'http://133.26.46.237/index.cgi',
-        url: 'https://crossorigin.me/' + addr,
+        url: 'https://cors-anywhere.herokuapp.com/' + addr,
         type:'get',
         dataType:'text',
         success:function(data){
