@@ -119,7 +119,7 @@
       var doc = new DOMParser().parseFromString(data, 'text/html');
       var html = $(doc);
       var content = '';
-      html.find('#mw-content-text>p').each(function(){
+      html.find('#mw-content-text p').each(function(){
         content += this.textContent;
       });
       return (content.length>0)?content.replace(/\n/g,'').substring(0,100)+'...':'';
